@@ -1,27 +1,18 @@
 import { NextResponse } from "next/server";
-import { verifySlackSignature, replyInThread, looksLikeAnError } from "@/lib/slack";
+import { replyInThread, looksLikeAnError } from "@/lib/slack";
 import { findInMemory, saveError } from "@/lib/memory";
 import { analyzeError, formatMemoryHit } from "@/lib/agent";
 import { searchRepoForError } from "@/lib/github";
 
 export async function POST(req) {
-  // Clonamos el request para poder leer el body dos veces
-  const reqClone = req.clone();
-
-  // 1. Verificar que el request viene de Slack
-  const isValid = await verifySlackSignature(reqClone);
-  if (!isValid) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const body = await req.json();
 
-  // 2. Responder al challenge de verificación de Slack (setup inicial)
+  // 1. Responder al challenge de verificación de Slack (setup inicial)
   if (body.type === "url_verification") {
     return NextResponse.json({ challenge: body.challenge });
   }
 
-  // 3. Procesar eventos de mensajes
+  // 2. Procesar eventos de mensajes
   if (body.event?.type === "message") {
     const { text, channel, ts, thread_ts, bot_id } = body.event;
 
@@ -53,11 +44,8 @@ async function processError({ text, channel, ts }) {
   const memoryHit = await findInMemory(text);
 
   if (memoryHit) {
-    // Error conocido: responder con el historial
     const message = formatMemoryHit(memoryHit);
     await replyInThread(channel, ts, message);
-
-    // Actualizamos la memoria con la nueva ocurrencia
     await saveError({ errorText: text, channel, ts, analysis: memoryHit.analysis });
     return;
   }
