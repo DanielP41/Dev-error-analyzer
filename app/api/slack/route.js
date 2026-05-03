@@ -26,9 +26,7 @@ export async function POST(req) {
       return NextResponse.json({ ok: true });
     }
 
-    // Responder inmediatamente a Slack (tiene timeout de 3s)
-    // El procesamiento real lo hacemos de forma asíncrona
-    processError({ text, channel, ts }).catch((err) => {
+    await processError({ text, channel, ts }).catch((err) => {
       console.error("processError failed:", err?.message, err?.stack);
     });
 
