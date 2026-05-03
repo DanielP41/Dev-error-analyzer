@@ -65,13 +65,13 @@ export default function Home() {
         <a href="https://github.com/DanielP41/Dev-error-analyzer" target="_blank" rel="noopener noreferrer">github.com/DanielP41/Dev-error-analyzer</a>
       </footer>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         :root{
           --bg:#040d1f;--surface:#071428;--surface2:#0a1a35;--border:#0f2444;
           --gold:#c9a84c;--gold-light:#e8c96d;--gold-dim:rgba(201,168,76,0.15);
           --blue:#1a3a6e;--text:#dce8ff;--muted:#5a7aaa;
-          --mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif;--display:'Syne',sans-serif;
+          --mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif;--display:'Playfair Display',serif;
         }
         html{scroll-behavior:smooth}
         body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
