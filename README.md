@@ -1,24 +1,44 @@
-\# Dev Error Analyzer — Slack Bot
+\# Dev Error Analyzer
 
 
 
-Slack bot that detects errors in dev channels, analyzes them with AI, remembers past occurrences, and opens GitHub issues if nobody resolves them.
+A Slack bot that watches your dev channels for errors, analyzes them with AI, and responds in the thread with a diagnosis and fix. If nobody resolves it, it opens a GitHub issue automatically.
 
 
 
-\## Features
+\*\*Live:\*\* https://dev-error-analyzer-b5r1.vercel.app  
+
+\*\*Track:\*\* ChatSDK Agents — Vercel Zero to Agent Hackathon 2026
 
 
 
-\- Automatic detection of errors and stack traces in Slack
+\---
 
-\- Error memory: if the error was seen before, responds instantly with the historical solution
 
-\- AI analysis (Groq + LLaMA 3.3): probable cause + solution + code snippet
 
-\- Repo search: shows related files from GitHub
+\## What it does
 
-\- Auto-issue: if nobody resolves the error within the configured time, opens a GitHub issue automatically
+
+
+When someone drops a stack trace or error message in a Slack channel, the bot:
+
+
+
+1\. Detects it automatically using pattern matching
+
+2\. Checks its memory (Upstash Redis) — if the error was seen before, it responds instantly with the historical solution
+
+3\. If it's new, calls Groq (LLaMA 3.3 70b) to analyze the error and generate a fix with code examples
+
+4\. Searches the GitHub repo for related files using the code search API
+
+5\. Replies in the thread with everything it found
+
+6\. If nobody responds to the thread within the configured timeout, it opens a GitHub issue automatically
+
+
+
+\---
 
 
 
@@ -26,15 +46,15 @@ Slack bot that detects errors in dev channels, analyzes them with AI, remembers 
 
 
 
-\- \*\*Next.js 14\*\* (App Router)
+Next.js 14 (App Router), Groq API (LLaMA 3.3 — free tier), Upstash Redis (free tier), Slack Events API, GitHub API via Octokit, deployed on Vercel Hobby.
 
-\- \*\*Groq API\*\* (LLaMA 3.3 70b — free tier)
 
-\- \*\*Upstash Redis\*\* (error memory — free tier)
 
-\- \*\*Vercel Cron Jobs\*\* (daily check)
+Total infrastructure cost: $0/month.
 
-\- \*\*GitHub API\*\* via Octokit
+
+
+\---
 
 
 
@@ -42,7 +62,7 @@ Slack bot that detects errors in dev channels, analyzes them with AI, remembers 
 
 
 
-\### 1. Clone and install
+Clone the repo and install dependencies:
 
 
 
@@ -58,87 +78,23 @@ npm install
 
 
 
-\### 2. Create the Slack App
+Create a Slack App at https://api.slack.com/apps. Add these bot scopes: `chat:write`, `channels:history`, `groups:history`. Enable Event Subscriptions and subscribe to `message.channels` and `message.groups`.
 
 
 
-1\. Go to https://api.slack.com/apps → \*\*Create New App\*\* → From scratch
-
-2\. In \*\*OAuth \& Permissions\*\* → add these Bot Token Scopes:
-
-&#x20;  - `chat:write`
-
-&#x20;  - `channels:history`
-
-&#x20;  - `groups:history`
-
-3\. In \*\*Event Subscriptions\*\* → Enable Events → Request URL: `https://your-domain.vercel.app/api/slack`
-
-4\. Subscribe to bot events: `message.channels` and `message.groups`
-
-5\. Install the app in your workspace and copy the \*\*Bot Token\*\*
-
-6\. Copy the \*\*Signing Secret\*\* from Basic Information
+Create a free Groq account at https://console.groq.com and generate an API key.
 
 
 
-\### 3. Create a Groq account
+Generate a GitHub personal access token with `repo` scope at https://github.com/settings/tokens.
 
 
 
-1\. Go to https://console.groq.com
-
-2\. Create an API Key (free)
+Copy `.env.example` to `.env.local` and fill in your values. Deploy to Vercel and link an Upstash Redis database from the Storage tab. Point the Slack webhook to `https://your-project.vercel.app/api/slack`.
 
 
 
-\### 4. Configure GitHub
-
-
-
-1\. Go to https://github.com/settings/tokens → \*\*Generate new token (classic)\*\*
-
-2\. Required scopes: `repo` (for code search and creating issues)
-
-
-
-\### 5. Environment variables
-
-
-
-Copy `.env.example` to `.env.local` and fill in:
-
-
-
-```bash
-
-cp .env.example .env.local
-
-```
-
-
-
-\### 6. Deploy on Vercel
-
-
-
-```bash
-
-npx vercel
-
-```
-
-
-
-Add the environment variables in the Vercel dashboard. Link Upstash Redis via \*\*Storage\*\* → \*\*Upstash for Redis\*\*. Add `CRON\_SECRET` as an environment variable (any long random string).
-
-
-
-\### 7. Point the Slack webhook
-
-
-
-Once deployed, go to the Slack App → \*\*Event Subscriptions\*\* → Request URL: `https://your-project.vercel.app/api/slack`
+\---
 
 
 
@@ -146,75 +102,71 @@ Once deployed, go to the Slack App → \*\*Event Subscriptions\*\* → Request U
 
 
 
-| Variable | Description | Default |
+| Variable | Description |
 
-|---|---|---|
+|---|---|
 
-| `SLACK\_BOT\_TOKEN` | Slack bot token (xoxb-...) | — |
+| `SLACK\_BOT\_TOKEN` | Slack bot token (xoxb-...) |
 
-| `SLACK\_SIGNING\_SECRET` | Slack app signing secret | — |
+| `SLACK\_SIGNING\_SECRET` | Slack app signing secret |
 
-| `GROQ\_API\_KEY` | Groq API key | — |
+| `GROQ\_API\_KEY` | Groq API key |
 
-| `GITHUB\_TOKEN` | GitHub personal access token | — |
+| `GITHUB\_TOKEN` | GitHub personal access token |
 
-| `GITHUB\_OWNER` | GitHub username or org | — |
+| `GITHUB\_OWNER` | GitHub username or org |
 
-| `GITHUB\_REPO` | Repository name | — |
+| `GITHUB\_REPO` | Repository name |
 
-| `KV\_REST\_API\_URL` | Upstash Redis URL (auto-filled by Vercel) | — |
+| `KV\_REST\_API\_URL` | Upstash Redis URL (auto-filled by Vercel) |
 
-| `KV\_REST\_API\_TOKEN` | Upstash Redis token (auto-filled by Vercel) | — |
+| `KV\_REST\_API\_TOKEN` | Upstash Redis token (auto-filled by Vercel) |
 
-| `TEAM\_STACK` | Team's tech stack for analysis context | `Node.js` |
+| `TEAM\_STACK` | Tech stack for AI context (default: Node.js) |
 
-| `UNRESOLVED\_TIMEOUT\_MINUTES` | Minutes before opening a GitHub issue | `30` |
+| `UNRESOLVED\_TIMEOUT\_MINUTES` | Minutes before auto-opening a GitHub issue (default: 30) |
 
-| `CRON\_SECRET` | Secret to authorize cron job requests | — |
+| `CRON\_SECRET` | Secret to authorize the daily cron job |
 
 
 
-\## Project Structure
+\---
+
+
+
+\## Project structure
 
 
 
 ```
 
-├── app/
+app/
 
-│   ├── page.js                         <- landing page
+&#x20; page.js                   landing page
 
-│   ├── layout.js                       <- root layout
+&#x20; layout.js                 root layout
 
-│   └── api/
+&#x20; api/
 
-│       ├── slack/route.js              <- receives Slack events
+&#x20;   slack/route.js          receives Slack events
 
-│       └── cron/check-unresolved/      <- daily cron job
+&#x20;   cron/check-unresolved/  daily cron job
 
-├── lib/
 
-│   ├── agent.js                        <- Groq analysis
 
-│   ├── slack.js                        <- Slack helpers
+lib/
 
-│   ├── memory.js                       <- Upstash Redis
+&#x20; agent.js                  Groq analysis logic
 
-│   └── github.js                       <- GitHub API
+&#x20; slack.js                  Slack helpers and error detection
 
-├── vercel.json                         <- cron config
+&#x20; memory.js                 Upstash Redis read/write
 
-└── .env.example
+&#x20; github.js                 GitHub search and issue creation
+
+
+
+vercel.json                 cron schedule config
 
 ```
-
-
-
-\## Live Demo
-
-
-
-https://dev-error-analyzer-b5r1.vercel.app
-
-
 
