@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getTimedOutErrors, saveGithubIssueUrl } from "@/lib/memory";
 import { openGithubIssue } from "@/lib/github";
 import { replyInThread } from "@/lib/slack";
+import { sendToChannel } from "@/lib/discord";
 
 /**
  * Corre cada 5 minutos (configurado en vercel.json).
@@ -31,17 +32,26 @@ export async function GET(req) {
         analysis: entry.analysis,
         channel: entry.channel,
         slackTs: entry.ts,
+        source: entry.source || "slack",
+        discordChannelId: entry.discordChannelId || null,
       });
 
       // Guardar la URL del issue en memoria
       await saveGithubIssueUrl(entry.hash, issueUrl);
 
-      // Notificar en el hilo de Slack
-      await replyInThread(
-        entry.channel,
-        entry.ts,
-        `*⚠️ Este error sigue sin resolver.* Abrí un issue en GitHub automáticamente: ${issueUrl}`
-      );
+      // Notificar en la plataforma de origen
+      if (entry.source === "discord" && entry.discordChannelId) {
+        await sendToChannel(
+          entry.discordChannelId,
+          `**⚠️ Error sin resolver detectado.** Abrí un issue en GitHub automáticamente: ${issueUrl}`
+        );
+      } else {
+        await replyInThread(
+          entry.channel,
+          entry.ts,
+          `*⚠️ Este error sigue sin resolver.* Abrí un issue en GitHub automáticamente: ${issueUrl}`
+        );
+      }
 
       processed++;
     } catch (err) {
